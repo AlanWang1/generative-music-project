@@ -1,14 +1,15 @@
-// server/index.js
-
-const tf = require('@tensorflow/tfjs')
-
+// basic packages
 const express = require('express');
 const path = require('path');
-const { nextTick } = require('process');
-const axios = require("axios").default;
+
+// other packages
+const tf = require('@tensorflow/tfjs');
+const { fstat } = require('fs');
+
+// local modules
+const requestUploadUrl = require('./functions/requestUploadUrl').requestUploadUrl
 
 const PORT = process.env.PORT || 3001;
-
 const app = express();
 require('dotenv').config();
 
@@ -18,21 +19,27 @@ app.use(express.static(path.resolve(__dirname, '../client/build')));
 // Handle GET requests to /api route
 // All other GET requests not handles will return our React app
 
-// (will allow both the node app and the react app to be served on the same domain)
+app.use('/api/upload', async (req, res) => {
 
-app.get("/api/requestUploadUrl", (req, res) => {
+  const query = new URLSearchParams(req.url);
+  const fileName = query.get(`/upload?fileName`);
+ 
+  try {
 
-  var options = {
-    method: 'GET',
-    url: 'https://developer.moises.ai/api/upload/signed-url',
-    headers: {Authorization: process.env.MOISES_API_KEY}
-  };
-  
-  axios.request(options).then(function (response) {
-    res.send(response);
-  }).catch(function (error) {
-    res.send(error);
-  });
+    let tempUploadUrl;
+    let tempInputUrl;
+
+    let response = await requestUploadUrl(`${process.env.MOISES_API_KEY}`)
+    
+    tempInputUrl = response.data.tempInputUrl
+    tempUploadUrl = response.data.uploadSignedUrl
+
+    console.log(tempUploadUrl)
+    console.log(tempInputUrl)
+
+  } catch(err) {
+    res.send(err)
+  }
 
 });
 
